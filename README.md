@@ -1,69 +1,106 @@
-<div align="center">
+<div align="center" style="border-bottom: none">
     <h1>
-        🎙️ Privacy-First AI Meeting Assistant
+        <img src="docs/Meetily-6.png" style="border-radius: 10px;" alt="Meetily Logo" />
+        <br>
+        Meetily - Privacy-First AI Meeting Assistant
     </h1>
     <p>
-        <b>Capture, transcribe, and summarize meetings entirely on your local infrastructure.</b>
+        <b>Built to capture, transcribe, and summarize meetings entirely on your local machine.</b>
     </p>
 </div>
 
 ---
 
-## 📝 Overview
-This is a privacy-first AI meeting assistant that runs entirely on your local machine. It captures your meetings, transcribes them in real-time, and generates summaries, all without sending any sensitive audio data to the cloud. Perfect for professionals who need to maintain complete control over their sensitive information.
+## 🚀 Introduction
 
-## ✨ Features
-- **Local First:** All audio processing is done on your machine. No audio data ever leaves your computer.
-- **Real-time Transcription:** Get a live transcript of your meeting as it happens using Whisper or Parakeet models.
-- **AI-Powered Summaries:** Generate summaries of your meetings using local LLMs via Ollama, or connect to your own endpoints (OpenAI, Claude, etc).
-- **Hardware Acceleration:** Supports Metal & CoreML (macOS), CUDA & Vulkan (Windows/Linux) for fast AI processing.
-- **Professional Audio Capture:** Captures microphone and system audio simultaneously with intelligent noise suppression.
+Welcome to **Meetily**! We built this application to solve a critical problem: taking meeting notes without compromising data privacy. 
 
-## 🏗️ Architecture & Tech Stack
-This application is built for high performance and cross-platform compatibility:
-- **Frontend:** Next.js 14, React 18, TailwindCSS
-- **Backend:** Rust & Tauri 2.x
-- **Database:** SQLite (via sqlx)
-- **AI Engine:** `whisper-rs` (Whisper) & `ort` (ONNX Runtime for Parakeet)
+Cloud-based meeting transcription tools send highly sensitive conversations to third-party servers, creating significant privacy risks. **Meetily runs entirely locally on your machine.** It captures your meeting audio, transcribes it in real-time, and generates intelligent summaries—all without your audio ever leaving your device.
 
-## 🚀 Getting Started (Development)
+## 🛠️ How It Works
+
+Meetily operates in a seamless, three-step pipeline:
+
+1. **Audio Capture**: Using cross-platform native APIs, Meetily captures both your microphone input and system audio simultaneously. It intelligently mixes them with professional loudness normalization to prevent distortion.
+2. **Real-time Transcription**: The captured audio is streamed into our local AI transcription engine (Whisper or Parakeet). The speech is transcribed into text in real-time right before your eyes.
+3. **AI Summarization**: Once the meeting ends, the transcript is passed to a Large Language Model (LLM) which analyzes the text, extracts key action items, and formats a clean, comprehensive summary.
+
+## 🧠 Models & Libraries Used
+
+We engineered Meetily using a modern, highly optimized technology stack to ensure it runs efficiently on consumer hardware.
+
+### AI Models (Local & Cloud Options)
+* **Transcription Models**: 
+  * **Whisper** (by OpenAI): Integrated directly for highly accurate, offline speech-to-text.
+  * **Parakeet** (by NVIDIA): Converted to ONNX format for lightning-fast transcription.
+* **Summarization Models**:
+  * **Ollama (Local)**: We support connecting to your local Ollama instance for 100% offline, private summarization using models like Llama 3 or Mistral.
+  * **Cloud APIs**: Support for custom OpenAI endpoints, Claude, Groq, and OpenRouter for users who prefer cloud-powered summaries.
+
+### Core Technology Stack
+* **App Framework**: **Tauri (v2)** - Allows us to build a lightweight, cross-platform desktop application using web technologies for the UI and Rust for the heavy lifting.
+* **Frontend**: 
+  * **Next.js 14** & **React 18**
+  * **TailwindCSS** & **Radix UI (shadcn/ui)** for a beautiful, responsive user interface.
+  * **BlockNote / Tiptap** for rich-text editing of meeting notes.
+* **Backend (Rust)**:
+  * `whisper-rs`: Rust bindings for whisper.cpp to run inference locally.
+  * `ort` (ONNX Runtime): Powers the fast execution of Parakeet models.
+  * `cpal`: Handles cross-platform, low-level audio capture.
+  * `sqlx` (SQLite): Manages local database storage for your notes and settings.
+  * `ebur128` & `nnnoiseless`: Provides professional audio normalization and neural-network-based background noise suppression.
+
+## 💻 Installation & Development Guide
+
+Want to build Meetily from source? Follow these steps to get a local development environment running.
 
 ### Prerequisites
-- Node.js (v18+)
-- `pnpm`
-- Rust & Cargo
-- Visual Studio build tools (Windows)
+Ensure you have the following installed on your machine:
+* **Node.js** (v18+)
+* **pnpm** (Package manager)
+* **Rust** (v1.77+ with Cargo)
+* **Visual Studio Build Tools** (for Windows C++ compilation requirements)
 
-### Installation
-1. Install frontend dependencies:
-   ```bash
-   cd frontend
-   pnpm install
-   ```
-
-2. Run the development server (CPU mode by default):
-   ```bash
-   pnpm tauri:dev
-   ```
-
-### Building for Production
-To build a standalone Windows executable:
+### 1. Clone & Install Dependencies
+First, clone the repository and install the frontend dependencies.
 ```bash
-cd frontend
+git clone https://github.com/DhirajK24/Capstone-Meeting-Intelligence-Action-Engine-.git meetily
+cd meetily/frontend
+pnpm install
+```
+
+### 2. Run the Development Server
+To launch the app in development mode with hot-reloading:
+```bash
+pnpm tauri:dev
+```
+*(Note: Initial compilation of the Rust backend, especially the AI model bindings, may take several minutes.)*
+
+### 3. Build for Production
+To create a standalone portable executable (`.exe`) that you can share with others, use the NSIS bundler to avoid global download timeouts:
+```bash
 pnpm tauri build --bundles nsis
 ```
-Your compiled `.exe` will be available in `target/release/`.
+Once completed, your executable will be located in:
+`frontend/src-tauri/target/release/bundle/nsis/` (or run it directly from `target/release/meetily.exe`).
 
-## 📦 Portable Distribution
-To share this app with others without using an installer, create a ZIP file containing these exact files in the same folder:
-1. `target/release/meetily.exe`
-2. All DLLs from `target/release/` (e.g., `onnxruntime.dll`, `DirectML.dll`)
-3. The sidecars from `frontend/src-tauri/binaries/`:
-   - `ffmpeg-x86_64-pc-windows-msvc.exe`
-   - `llama-helper-x86_64-pc-windows-msvc.exe`
+## ⚡ Hardware Acceleration
 
-## 🤝 Contributing
-Feel free to open issues or submit pull requests if you want to improve this project.
+Meetily is designed to take advantage of your computer's GPU to speed up transcription. Depending on your system, the Rust backend is configured to automatically utilize:
+* **macOS**: Apple Metal & CoreML
+* **Windows**: CUDA (NVIDIA) or Vulkan (AMD/Intel)
+* **Linux**: CUDA or ROCm (HIP)
 
-## 📄 License
-MIT License
+*For optimal performance on Windows with an NVIDIA GPU, ensure the CUDA Toolkit is installed and build with `cargo build --release --features cuda`.*
+
+## 🔒 Privacy & Data Storage
+
+All data generated by Meetily stays strictly on your machine.
+* **Recordings**: Temporary audio files are saved locally and automatically cleaned up.
+* **Transcripts & Notes**: Stored securely in a local SQLite database in your system's AppData directory.
+* **Telemetry**: Zero telemetry, zero analytics tracking.
+
+## 🤝 Contributing & License
+This project is open-source and built for the community. Contributions, pull requests, and bug reports are highly encouraged!
+
+**License:** MIT License.
