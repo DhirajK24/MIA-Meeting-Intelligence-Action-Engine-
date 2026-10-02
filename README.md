@@ -1,6 +1,6 @@
 <div align="center" style="border-bottom: none">
     <h1>
-        <img src="docs/mia-banner.png" style="border-radius: 10px;" alt="MIA Banner" />
+        <img src="docs/MIA%20Meeting%20Intelligence%20Dashboard.png" style="border-radius: 10px;" alt="MIA Banner" />
         <br>
         MIA - Meeting Intelligence & Action Engine
     </h1>
