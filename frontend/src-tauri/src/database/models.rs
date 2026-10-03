@@ -35,7 +35,23 @@ pub struct Transcript {
     pub audio_start_time: Option<f64>,
     pub audio_end_time: Option<f64>,
     pub duration: Option<f64>,
+    // Speaker diarization label (e.g., "Speaker 1" or custom name)
+    pub speaker_label: Option<String>,
 }
+
+/// Represents an identified speaker in a meeting (from diarization)
+#[derive(Debug, Clone, FromRow, Serialize, Deserialize)]
+pub struct MeetingSpeaker {
+    pub id: String,
+    pub meeting_id: String,
+    pub internal_label: String,
+    pub custom_name: Option<String>,
+    pub sample_start_time: f64,
+    pub sample_end_time: f64,
+    pub segment_count: i64,
+    pub created_at: String,
+}
+
 
 #[derive(Debug, Clone, FromRow, Serialize, Deserialize)]
 pub struct SummaryProcess {

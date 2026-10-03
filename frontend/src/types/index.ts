@@ -16,6 +16,8 @@ export interface Transcript {
   audio_start_time?: number; // Seconds from recording start (e.g., 125.3)
   audio_end_time?: number;   // Seconds from recording start (e.g., 128.6)
   duration?: number;          // Segment duration in seconds (e.g., 3.3)
+  // Speaker diarization label (e.g., "Speaker 1" or custom name)
+  speaker_label?: string;
 }
 
 export interface TranscriptUpdate {
@@ -30,6 +32,8 @@ export interface TranscriptUpdate {
   audio_start_time: number; // Seconds from recording start
   audio_end_time: number;   // Seconds from recording start
   duration: number;          // Segment duration in seconds
+  // Speaker diarization label (live transcription may not have this)
+  speaker_label?: string;
 }
 
 export interface Block {

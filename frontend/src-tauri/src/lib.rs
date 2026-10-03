@@ -29,7 +29,9 @@ macro_rules! perf_trace {
 }
 
 // Make these macros available to other modules
+#[allow(unused_imports)]
 pub(crate) use perf_debug;
+#[allow(unused_imports)]
 pub(crate) use perf_trace;
 
 // Re-export async logging macros for external use (removed due to macro conflicts)
@@ -41,6 +43,7 @@ pub mod audio;
 pub mod config;
 pub mod console_utils;
 pub mod database;
+pub mod diarization;
 pub mod notifications;
 pub mod ollama;
 pub mod onboarding;
@@ -830,6 +833,12 @@ pub fn run() {
             audio::import::start_import_audio_command,
             audio::import::cancel_import_command,
             audio::import::is_import_in_progress_command,
+            // Speaker diarization commands
+            diarization::commands::re_run_diarization,
+            diarization::commands::get_speakers,
+            diarization::commands::update_speaker_name,
+            diarization::commands::merge_speakers,
+            diarization::commands::play_speaker_sample,
         ])
         .build(tauri::generate_context!())
         .expect("error while building tauri application")

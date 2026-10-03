@@ -229,7 +229,18 @@ fn build_combine_summary_user_prompt(combined_text: &str) -> String {
 fn build_final_report_system_prompt(
     section_instructions: &str,
     clean_template_markdown: &str,
+    speaker_names: Option<&[String]>,
 ) -> String {
+    let speaker_instruction = if let Some(names) = speaker_names.filter(|n| !n.is_empty()) {
+        let names_list = names.join(", ");
+        format!(
+            "\n9. Based on the transcript, generate an Action Items table with the columns: '#', 'Topic', 'Action Item', and 'Owner'. You MUST analyze the conversational context to determine who is responsible for each task. Strictly populate the 'Owner' column using ONLY the provided speaker names ({}). Do not invent names or leave owners blank if a speaker committed to a task.",
+            names_list
+        )
+    } else {
+        String::new()
+    };
+
     format!(
         r#"You are an expert meeting summarizer. Generate a final meeting report by filling in the provided Markdown template based on the source text.
 
@@ -241,7 +252,7 @@ fn build_final_report_system_prompt(
 5. If a section has no relevant info, write "None noted in this section."
 6. Output **only** the completed Markdown report.
 7. Do not include reasoning, thinking, self-correction, decision strategy, or any meta-commentary sections — output only the completed Markdown report.
-8. If unsure about something, omit it.
+8. If unsure about something, omit it.{speaker_instruction}
 
 **SECTION-SPECIFIC INSTRUCTIONS:**
 {section_instructions}
@@ -381,6 +392,7 @@ pub(crate) async fn generate_meeting_summary(
     summary_language: Option<&str>,
     detected_transcript_language: Option<&str>,
     cached_english: Option<&str>,
+    speaker_names: Option<&[String]>,
 ) -> Result<GeneratedMeetingSummary, String> {
     if cancellation_token.is_some_and(CancellationToken::is_cancelled) {
         return Err("Summary generation was cancelled".to_string());
@@ -430,7 +442,7 @@ pub(crate) async fn generate_meeting_summary(
                                 chunk_summaries.push(cleaned.markdown);
                                 break;
                             }
-                            Err(error)
+                            Err(_error)
                                 if cancellation_token.is_some_and(CancellationToken::is_cancelled) =>
                             {
                                 return Err("Summary generation was cancelled".to_string());
@@ -494,6 +506,7 @@ pub(crate) async fn generate_meeting_summary(
             let final_system_prompt = build_final_report_system_prompt(
                 &template.to_section_instructions(),
                 &template.to_markdown_structure(),
+                speaker_names,
             );
             let mut final_user_prompt =
                 format!("<transcript_chunks>\n{content_to_summarize}\n</transcript_chunks>\n");

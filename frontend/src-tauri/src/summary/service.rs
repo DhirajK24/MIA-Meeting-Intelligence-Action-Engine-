@@ -543,13 +543,96 @@ impl SummaryService {
             }),
         };
 
+        // === Speaker Diarization Enrichment ===
+        // Query speaker names and enrich transcript text so the LLM sees
+        // "[hitesh]: ..." instead of "[Speaker 1]: ..." in the Action Items.
+        let (enriched_text, speaker_names_for_prompt) = {
+            use crate::database::repositories::speaker::SpeakerRepository;
+
+            match SpeakerRepository::get_speakers(&pool, &meeting_id).await {
+                Ok(speakers) if !speakers.is_empty() => {
+                    // Build a map: internal_label -> display name
+                    let label_map: std::collections::HashMap<String, String> = speakers
+                        .iter()
+                        .map(|s| {
+                            let display = s
+                                .custom_name
+                                .as_deref()
+                                .filter(|n| !n.trim().is_empty())
+                                .unwrap_or(&s.internal_label)
+                                .to_string();
+                            (s.internal_label.clone(), display)
+                        })
+                        .collect();
+
+                    // Fetch per-segment speaker_label from the database and prepend to transcript
+                    let enriched = match sqlx::query_as::<_, (String, Option<String>)>(
+                        "SELECT transcript, speaker_label FROM transcripts WHERE meeting_id = ? ORDER BY audio_start_time ASC",
+                    )
+                    .bind(&meeting_id)
+                    .fetch_all(&pool)
+                    .await
+                    {
+                        Ok(rows) => {
+                            rows.iter()
+                                .map(|(transcript, label)| {
+                                    if let Some(lbl) = label {
+                                        let display = label_map
+                                            .get(lbl.as_str())
+                                            .cloned()
+                                            .unwrap_or_else(|| lbl.clone());
+                                        format!("[{}]: {}", display, transcript)
+                                    } else {
+                                        transcript.clone()
+                                    }
+                                })
+                                .collect::<Vec<_>>()
+                                .join("\n")
+                        }
+                        Err(e) => {
+                            warn!("Failed to fetch per-segment speaker labels: {}. Using original text.", e);
+                            text.clone()
+                        }
+                    };
+
+                    let names: Vec<String> = speakers
+                        .iter()
+                        .map(|s| {
+                            s.custom_name
+                                .as_deref()
+                                .filter(|n| !n.trim().is_empty())
+                                .unwrap_or(&s.internal_label)
+                                .to_string()
+                        })
+                        .collect();
+
+                    info!(
+                        "Speaker enrichment: {} speakers injected into prompt ({:?})",
+                        names.len(),
+                        names
+                    );
+
+                    (enriched, Some(names))
+                }
+                Ok(_) => {
+                    // No diarization data, use text as-is
+                    (text.clone(), None)
+                }
+                Err(e) => {
+                    warn!("Failed to load speakers for enrichment: {}. Using original text.", e);
+                    (text.clone(), None)
+                }
+            }
+        };
+
         let client = reqwest::Client::new();
+
         let result = generate_meeting_summary(
             &client,
             &provider,
             &model_name,
             &final_api_key,
-            &text,
+            &enriched_text,
             &custom_prompt,
             &template_id,
             &template,
@@ -564,6 +647,7 @@ impl SummaryService {
             summary_language.as_deref(),
             detected_summary_language.as_deref(),
             cached_english.as_deref(),
+            speaker_names_for_prompt.as_deref(),
         )
         .await;
 
@@ -622,7 +706,7 @@ impl SummaryService {
                     ),
                 }
             }
-            Err(error) if cancellation_token.is_cancelled() => {
+            Err(_error) if cancellation_token.is_cancelled() => {
                 match SummaryProcessesRepository::update_process_cancelled(
                     &pool,
                     &meeting_id,

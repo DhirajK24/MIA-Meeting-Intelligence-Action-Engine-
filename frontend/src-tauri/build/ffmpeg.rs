@@ -207,6 +207,7 @@ fn extract_zip(
     archive_path: &std::path::Path,
     extract_dir: &std::path::Path,
 ) -> Result<(), String> {
+    #[allow(unused_imports)]
     use std::io::Read;
 
     let file = std::fs::File::open(archive_path)

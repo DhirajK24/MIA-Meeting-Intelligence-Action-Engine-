@@ -73,8 +73,8 @@ posthog-rs = "0.3.7"
 # Cross-platform audio capture
 cpal = "0.15.3"
 
-# Wav encoding - now using manual WAV creation instead of hound
-# hound = "3.5"
+# Wav encoding/decoding for speaker sample extraction
+hound = "3.5"
 
 # Cli ! shouldn't be required if using as lib
 clap = { version = "4.3", features = ["derive"] }

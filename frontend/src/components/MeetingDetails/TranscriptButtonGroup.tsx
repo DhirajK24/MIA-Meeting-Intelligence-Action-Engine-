@@ -3,10 +3,12 @@
 import { useState, useCallback } from 'react';
 import { Button } from '@/components/ui/button';
 import { ButtonGroup } from '@/components/ui/button-group';
-import { Copy, FolderOpen, RefreshCw } from 'lucide-react';
+import { Copy, FolderOpen, RefreshCw, Users } from 'lucide-react';
 import Analytics from '@/lib/analytics';
 import { RetranscribeDialog } from './RetranscribeDialog';
 import { useConfig } from '@/contexts/ConfigContext';
+import { SpeakerModal } from '@/components/SpeakerModal';
+import type { Speaker } from '@/types/speaker';
 
 
 interface TranscriptButtonGroupProps {
@@ -16,6 +18,7 @@ interface TranscriptButtonGroupProps {
   meetingId?: string;
   meetingFolderPath?: string | null;
   onRefetchTranscripts?: () => Promise<void>;
+  onSpeakersUpdated?: (speakers: Speaker[]) => void;
 }
 
 
@@ -26,9 +29,11 @@ export function TranscriptButtonGroup({
   meetingId,
   meetingFolderPath,
   onRefetchTranscripts,
+  onSpeakersUpdated,
 }: TranscriptButtonGroupProps) {
   const { betaFeatures } = useConfig();
   const [showRetranscribeDialog, setShowRetranscribeDialog] = useState(false);
+  const [showSpeakerModal, setShowSpeakerModal] = useState(false);
 
   const handleRetranscribeComplete = useCallback(async () => {
     // Refetch transcripts to show the updated data
@@ -69,6 +74,23 @@ export function TranscriptButtonGroup({
           <span className="hidden @[22rem]:inline">Recording</span>
         </Button>
 
+        {/* Speaker Identification button — shown whenever we have a meetingId */}
+        {meetingId && (
+          <Button
+            size="sm"
+            variant="outline"
+            className="px-2 @[22rem]:px-4 border-blue-200 hover:bg-blue-50 hover:text-blue-700"
+            onClick={() => {
+              Analytics.trackButtonClick('open_speaker_modal', 'meeting_details');
+              setShowSpeakerModal(true);
+            }}
+            title="Identify and label speakers"
+          >
+            <Users className="@[22rem]:mr-2" size={18} />
+            <span className="hidden @[22rem]:inline">Speakers</span>
+          </Button>
+        )}
+
         {betaFeatures.importAndRetranscribe && meetingId && meetingFolderPath && (
           <Button
             size="sm"
@@ -93,6 +115,16 @@ export function TranscriptButtonGroup({
           meetingId={meetingId}
           meetingFolderPath={meetingFolderPath}
           onComplete={handleRetranscribeComplete}
+        />
+      )}
+
+      {/* Speaker Modal */}
+      {meetingId && (
+        <SpeakerModal
+          open={showSpeakerModal}
+          onOpenChange={setShowSpeakerModal}
+          meetingId={meetingId}
+          onSpeakersUpdated={onSpeakersUpdated}
         />
       )}
     </div>

@@ -1,6 +1,7 @@
 'use client';
 
 import { Transcript } from '@/types';
+import { Speaker, resolveSpeakerLabel } from '@/types/speaker';
 import { useEffect, useRef, useState } from 'react';
 import { ConfidenceIndicator } from './ConfidenceIndicator';
 import { Tooltip, TooltipContent, TooltipTrigger } from './ui/tooltip';
@@ -9,6 +10,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 
 interface TranscriptViewProps {
   transcripts: Transcript[];
+  speakers?: Speaker[]; // Diarization speaker list for label display
   isRecording?: boolean;
   isPaused?: boolean; // Is recording paused (affects UI indicators)
   isProcessing?: boolean; // Is processing/finalizing transcription (hides "Listening..." indicator)
@@ -104,7 +106,7 @@ function cleanStopWords(text: string): string {
   return cleanedText;
 }
 
-export const TranscriptView: React.FC<TranscriptViewProps> = ({ transcripts, isRecording = false, isPaused = false, isProcessing = false, isStopping = false, enableStreaming = false }) => {
+export const TranscriptView: React.FC<TranscriptViewProps> = ({ transcripts, speakers = [], isRecording = false, isPaused = false, isProcessing = false, isStopping = false, enableStreaming = false }) => {
   const [speechDetected, setSpeechDetected] = useState(false);
 
   // Debug: Log the props to understand what's happening
@@ -305,6 +307,12 @@ export const TranscriptView: React.FC<TranscriptViewProps> = ({ transcripts, isR
                 </TooltipContent>
               </Tooltip>
               <div className="flex-1">
+                {/* Speaker label badge */}
+                {transcript.speaker_label && (
+                  <span className="inline-block mr-2 mb-1 text-xs font-semibold px-2 py-0.5 rounded-full bg-blue-900/50 text-blue-300 border border-blue-700/50">
+                    {resolveSpeakerLabel(transcript.speaker_label, speakers) ?? transcript.speaker_label}
+                  </span>
+                )}
                 {isStreaming ? (
                   // Streaming transcript - show in bubble (full width)
                   <div className="bg-gray-100 border border-gray-200 rounded-lg px-3 py-2">
