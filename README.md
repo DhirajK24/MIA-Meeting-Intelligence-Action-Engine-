@@ -23,7 +23,8 @@ MIA operates in a seamless, three-step pipeline:
 
 1. **Audio Capture**: Using cross-platform native APIs, MIA captures both your microphone input and system audio simultaneously. It intelligently mixes them with professional loudness normalization to prevent distortion.
 2. **Real-time Transcription**: The captured audio is streamed into our local AI transcription engine (Whisper or Parakeet). The speech is transcribed into text in real-time right before your eyes.
-3. **AI Summarization**: Once the meeting ends, the transcript is passed to a Large Language Model (LLM) which analyzes the text, extracts key action items, and formats a clean, comprehensive summary.
+3. **Speaker Diarization**: The captured audio is analyzed by a local neural network to distinguish between different speakers. It identifies participants, isolates audio samples, and assigns names directly to the transcript in a fully offline pipeline.
+4. **AI Summarization**: Once the meeting ends, the transcript is passed to a Large Language Model (LLM) which analyzes the text, extracts key action items, and formats a clean, comprehensive summary.
 
 ## 🧠 Models & Libraries Used
 
@@ -33,6 +34,8 @@ We engineered MIA using a modern, highly optimized technology stack to ensure it
 * **Transcription Models**: 
   * **Whisper** (by OpenAI): Integrated directly for highly accurate, offline speech-to-text.
   * **Parakeet** (by NVIDIA): Converted to ONNX format for lightning-fast transcription.
+* **Speaker Diarization Models**:
+  * **Pyannote**: We use a highly optimized, 512-dimensional ONNX-based embedding model running via `ort` to uniquely cluster and fingerprint meeting participants with zero cloud dependencies.
 * **Summarization Models**:
   * **Ollama (Local)**: We support connecting to your local Ollama instance for 100% offline, private summarization using models like Llama 3 or Mistral.
   * **Cloud APIs**: Support for custom OpenAI endpoints, Claude, Groq, and OpenRouter for users who prefer cloud-powered summaries.
@@ -45,8 +48,9 @@ We engineered MIA using a modern, highly optimized technology stack to ensure it
   * **BlockNote / Tiptap** for rich-text editing of meeting notes.
 * **Backend (Rust)**:
   * `whisper-rs`: Rust bindings for whisper.cpp to run inference locally.
-  * `ort` (ONNX Runtime): Powers the fast execution of Parakeet models.
+  * `ort` (ONNX Runtime): Powers the fast execution of Parakeet models and the Pyannote speaker diarization engine.
   * `cpal`: Handles cross-platform, low-level audio capture.
+  * `ffmpeg` / `symphonia`: Powers high-speed audio decoding, extraction, and slicing.
   * `sqlx` (SQLite): Manages local database storage for your notes and settings.
   * `ebur128` & `nnnoiseless`: Provides professional audio normalization and neural-network-based background noise suppression.
 
